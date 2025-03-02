@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import router from "./routes"; // Import routes
 
 dotenv.config();
 
@@ -11,10 +12,8 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Test Route
-app.get("/", (req, res) => {
-  res.json({ message: "Backend is running!" });
-});
+// Routes
+app.use("/", router); // Use routes from routes.ts
 
 // Start Server
 app.listen(PORT, () => {
