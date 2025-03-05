@@ -3,8 +3,7 @@ import { imageService } from "./services";
 
 export const imageUploadController = async (req: Request, res: Response) => {
     try {
-        const imageData = req.body; 
-        const result = await imageService.uploadImage(imageData);
+        const result = await imageService.uploadImages();
 
         res.json({ message: "Image Uploaded!", data: result });
     } catch (error) {
