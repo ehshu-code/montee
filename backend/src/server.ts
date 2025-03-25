@@ -1,7 +1,9 @@
+import { createServer } from "http";
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import router from "./routes"; // Import routes
+import router from "./routes";
+import { initializeWebSocketServer } from "./socket";
 
 dotenv.config();
 
@@ -13,9 +15,15 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
-app.use("/", router); // Use routes from routes.ts
+app.use("/", router);
 
-// Start Server
-app.listen(PORT, () => {
+// Create an HTTP server
+const server = createServer(app);
+
+// Initialize WebSocket server
+initializeWebSocketServer(server);
+
+// Start the server (HTTP and WebSocket)
+server.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });

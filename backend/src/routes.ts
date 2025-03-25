@@ -3,6 +3,8 @@ import { imageUploadController } from "./controllers";
 
 const router = express.Router();
 
-router.post("/imageUpload", imageUploadController);
+router.get("/", (req, res) => {
+  res.send("Server is running");
+});
 
 export default router;
