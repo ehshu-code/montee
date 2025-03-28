@@ -97,8 +97,8 @@ export async function sendVideoToClient(ws: any, outputFilename: string) {
         }
 
         const videoData = await readFileAsync(outputFilename);
-        console.log('Sending video data:', videoData.length);
         ws.send(videoData, { binary: true }, (err: any) => {
+            console.log('Sending video data:', videoData);
             if (err) console.error('Error sending video:', err);
         });
         

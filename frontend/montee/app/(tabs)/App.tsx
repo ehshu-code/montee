@@ -6,7 +6,15 @@ import WebSocketContext, { WebSocketProvider } from '@/services'; // Import WebS
 // Main App component
 const App = () => {
   const [photoURIs, setPhotoURIs] = useState<string[]>([]);
-  const ws = useContext(WebSocketContext); // Access WebSocket context
+  const { ws, videoData } = useContext(WebSocketContext); // Access WebSocket context
+
+  if (!ws) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.text}>Connecting to server...</Text>
+      </View>
+    );
+  }
 
   const handleChoosePhotos = async () => {
     const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
