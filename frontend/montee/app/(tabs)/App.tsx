@@ -1,17 +1,18 @@
 import { View, Text, StyleSheet, Button } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import React, { useContext, useState } from 'react';
-import WebSocketContext, { WebSocketProvider } from '@/services'; // Import WebSocketProvider and WebSocketContext
+import React, { useContext, useEffect, useState } from 'react';
+import WebSocketContext, { WebSocketProvider } from '@/services';
+import { Video } from 'expo-av';
+import { ServerFeedback } from '@/services/constants';
 
-// Main App component
 const App = () => {
   const [photoURIs, setPhotoURIs] = useState<string[]>([]);
-  const { ws, videoData } = useContext(WebSocketContext); // Access WebSocket context
+  const { ws, videoUri, serverFeedback } = useContext(WebSocketContext);
 
-  if (!ws) {
+  if (serverFeedback === ServerFeedback.PROCESSING) {
     return (
       <View style={styles.container}>
-        <Text style={styles.text}>Connecting to server...</Text>
+        <Text style={styles.text}>Processing...</Text>
       </View>
     );
   }
@@ -25,6 +26,7 @@ const App = () => {
 
     const results = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: 'images', // TODO: Change to lib type
+      orderedSelection: true,
       allowsMultipleSelection: true,
       quality: 1,
     });
@@ -32,6 +34,8 @@ const App = () => {
     if (!results.canceled) {
       setPhotoURIs(results.assets.map((asset) => asset.uri));
     }
+
+    // Put navigation here
   };
 
   const handleUpload = async () => {
@@ -65,12 +69,24 @@ const App = () => {
   };
   
   return (
-      <View style={styles.container}>
-        <Text style={styles.text}>Montee</Text>
-        <Button title="Choose images" onPress={handleChoosePhotos} />
-        <Button title="Upload" onPress={handleUpload} />
-      </View>
+    <View style={styles.container}>
+      <Text style={styles.text}>Montee</Text>
+      <Button title="Choose images" onPress={handleChoosePhotos} />
+      <Button title="Upload" onPress={handleUpload} />
+      {videoUri ? (
+        <Video
+          source={{ uri: videoUri }}
+          rate={1.0}
+          volume={1.0}
+          isMuted={false}
+          shouldPlay
+          isLooping
+          style={{ width: '100%', height: '50%' }}
+        />
+      ) : null}
+    </View>
   );
+  
 };
 
 export default App;
