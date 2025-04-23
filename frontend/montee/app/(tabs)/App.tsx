@@ -1,12 +1,14 @@
 import { View, Text, StyleSheet, Button } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useContext, useEffect, useState } from 'react';
-import WebSocketContext, { WebSocketProvider } from '@/services';
+import WebSocketContext from '@/services';
 import { Video } from 'expo-av';
 import { ServerFeedback } from '@/services/constants';
+import { ImageSelection } from './types';
+import { Buffer } from 'buffer';
 
 const App = () => {
-  const [photoURIs, setPhotoURIs] = useState<string[]>([]);
+  const [images, setImages] = useState<ImageSelection[]>([]);
   const { ws, videoUri, serverFeedback } = useContext(WebSocketContext);
 
   if (serverFeedback === ServerFeedback.PROCESSING) {
@@ -28,46 +30,43 @@ const App = () => {
       mediaTypes: 'images', // TODO: Change to lib type
       orderedSelection: true,
       allowsMultipleSelection: true,
+      base64: true,
       quality: 1,
     });
 
     if (!results.canceled) {
-      setPhotoURIs(results.assets.map((asset) => asset.uri));
+      setImages(results.assets.map((asset, index) => (
+        {
+          index: index,
+          uri: asset.uri,
+          base64: asset.base64!,
+        }
+      )));
     }
-
     // Put navigation here
   };
 
+  // TODO: Batch upload all images instead of iterating.
   const handleUpload = async () => {
-    for (const uri of photoURIs) {
-      try {
-        const response = await fetch(uri);
-        const blob = await response.blob();
-  
-        const arrayBuffer = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-  
-          reader.onload = () => {
-            resolve(reader.result);  // Resolve with the ArrayBuffer
-          };
-  
-          reader.onerror = (error) => {
-            reject(error);  // Reject on error
-          };
-  
-          reader.readAsArrayBuffer(blob);
-        });
-  
-        if (arrayBuffer && ws && ws.readyState === ws.OPEN) {
-          console.log('Sending image to server');
-          ws.send(arrayBuffer as ArrayBuffer);
+    try {
+      for (const image of images) {
+        const imageBuffer = Buffer.from(image.base64, 'base64');
+        const isLast = image.index === images.length - 1;
+
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          console.log('Sending image no:', image.index + 1);
+          ws.send(imageBuffer);
+          if (isLast) {
+            console.log('isLast signal sent')
+            ws?.send('isLast')
+          }
         }
-      } catch (error) {
-        console.error('Error processing image URI:', error);
       }
+    } catch (error) {
+      console.error('Error sending images:', error);
     }
   };
-  
+
   return (
     <View style={styles.container}>
       <Text style={styles.text}>Montee</Text>
@@ -86,7 +85,6 @@ const App = () => {
       ) : null}
     </View>
   );
-  
 };
 
 export default App;

@@ -1,77 +1,92 @@
-import { spawn } from "child_process";
-import { deleteFile, fileExists, readFileAsync } from "./helpers";
+import { spawn, execSync } from "child_process";
+import fs, { write } from "fs";
+import { deleteFile, fileExists, isUtf8String, readFileAsync } from "./helpers";
 
 
 // Function to handle image stream collection
-export function collectImageStream(ws: any) {
-    let imageBuffers: Buffer[] = [];
-    let timeout: NodeJS.Timeout | null = null;
-
-    ws.on("message", (message: any) => {
-        if (message instanceof Buffer) {
-            imageBuffers.push(message);
-            console.log("Received image chunk:", message.length);
-
-            // Reset timeout on every new chunk
-            if (timeout) clearTimeout(timeout);
-
-            timeout = setTimeout(async () => {
-                const fullBuffer = Buffer.concat(imageBuffers);
-                console.log("Processing complete image stream:", fullBuffer.length);
-
-                // Process and send back the video
-                const videoFilename = await processImageStream(ws, fullBuffer);
-                sendVideoToClient(ws, videoFilename);
-
-                // Clear buffer after processing
-                imageBuffers = [];
-            }, 3000);
-        } else {
-            console.error("Unexpected message type:", typeof message);
+export function startImageStream(ws: any, pipePath: string) {
+    const stream = fs.createWriteStream(pipePath)
+    ws.on("message", async (message: Buffer) => {
+        console.log(`Message received:`, message)
+         if (isUtf8String(message)) {
+            const textFlag = message.toString('utf8');
+            if (textFlag === 'isLast') {
+                console.log('isLast')
+                stream.end()
+                fs.unlinkSync(pipePath)
+            }
+         }
+        else {
+            console.log("Image received");
+            const currentBuffer = Buffer.from(message);
+            console.log("Buffer size:", currentBuffer.length);
+    
+            // Write to named pipe
+            stream.write(currentBuffer, (err) => {
+                if (err) {
+                    console.log(`Write error:`, err)
+                } else {
+                    console.log('Write successful')
+                }
+            }
+        )
         }
-    });
+    }
+    );
+}
+
+export async function createNamedPipe(pipePath: string) {
+    // Remove existing pipe if exists
+    if (fs.existsSync(pipePath)) {
+        fs.unlinkSync(pipePath)
+    }
+    // Create a new named pipe (FIFO)
+    execSync(`mkfifo ${pipePath}`);
+    console.log(`New named pipe created. Path: ${pipePath}`)
+
+}
+
+export async function writeToNamedPipe(pipePath: string, data: Buffer) {
+    const stream = fs.createWriteStream(pipePath)
+    stream.write(data)
 }
 
 
 /*
     * This function processes the image stream received from the WebSocket client using ffmpeg.
  */
-export async function processImageStream(ws: any, data: Buffer): Promise<string> {
+export async function processImageStream(ws: any, pipePath: string): Promise<string> {
     return new Promise((resolve, reject) => {
         const timestamp = Date.now();
         const outputFilename = `output_${timestamp}.mp4`;
 
-        const ffmpeg = spawn('ffmpeg', [
-            '-f', 'image2pipe', '-framerate', '10', // 10 FPS (Each image lasts 0.1s)
-            '-i', '-', // Read images from stdin
-            '-r', '30', // Output frame rate
-            '-c:v', 'libx264', // Use H.264 codec (libx264)
-            '-pix_fmt', 'yuv420p', // Ensure output uses yuv420p pixel format
-            '-loglevel', 'error', // Only show errors
-            '-stats', '-progress', 'pipe:1', // Show stats and progress
-            outputFilename // Output file name
-        ]);        
+        if (!fs.existsSync(pipePath)) {
+            console.error('Named pipe not found:', pipePath);
+            return reject(new Error('Named pipe does not exist'));
+        }
 
-        // Log ffmpeg errors
+        const ffmpeg = spawn('ffmpeg', [
+            '-f', 'image2pipe',
+            '-framerate', '10', // Input frame rate
+            '-i', pipePath,     // Input from named pipe
+            '-r', '30',         // Output frame rate
+            '-c:v', 'libx264',  // Encode to H.264
+            '-pix_fmt', 'yuv420p',
+            '-loglevel', 'info', // Change to info for debugging
+            '-stats',
+            '-progress', 'pipe:1',
+            outputFilename
+        ]);
+           
         ffmpeg.stderr.on('data', (error) => {
             console.error(`FFMPEG log: ${error}`);
         });
 
-        // Write stdin data to ffmpeg input stream
-        if (!ffmpeg.stdin.destroyed) {
-            console.log(`Writing data to ffmpeg input stream: ${data.length} bytes`);
-            ffmpeg.stdin.write(data);
-            // Close ffmpeg input stream
-            ffmpeg.stdin.end();
-        }
-
-        // Close ffmpeg input when WebSocket closes
-        ws.on('close', () => {
-            console.log('WebSocket closed. Ending ffmpeg input.');
-            ffmpeg.stdin.end();
+        ffmpeg.stdout.on('data', (data) => {
+            console.log(`FFMPEG progress: ${data}`);
         });
+        
 
-        // Listen for ffmpeg process to close
         ffmpeg.on('close', (code) => {
             if (code === 0) {
                 console.log('FFMPEG processing complete.');
@@ -81,7 +96,6 @@ export async function processImageStream(ws: any, data: Buffer): Promise<string>
             }
         });
 
-        // Handle potential ffmpeg process errors
         ffmpeg.on('error', (err) => {
             reject(new Error(`FFMPEG process error: ${err.message}`));
         });
@@ -103,7 +117,7 @@ export async function sendVideoToClient(ws: any, outputFilename: string) {
         });
         
         await ws.close();
-        // deleteFile(outputFilename);
+        deleteFile(outputFilename);
     } catch (err) {
         console.error('Error:', err);
     }

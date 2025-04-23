@@ -25,3 +25,13 @@ export function deleteFile(filename: string): void {
         if (err) console.error('Error deleting video:', err);
     });
 }
+
+export function isUtf8String(buffer: Buffer) {
+    try {
+      const decoded = buffer.toString('utf8');
+      return Buffer.from(decoded, 'utf8').equals(buffer);
+    } catch {
+      return false;
+    }
+  }
+  

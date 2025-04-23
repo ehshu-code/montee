@@ -15,7 +15,8 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
   const [serverFeedback, setServerFeedback] = useState<string | null>(null);
 
   useEffect(() => {
-    const socket = new WebSocket('ws://192.168.0.18:3000');
+    const socket = new WebSocket('ws://192.168.0.97:3000');
+    console.log(socket)
     socket.binaryType = 'arraybuffer';
     
     socket.onopen = () => {

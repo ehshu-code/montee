@@ -1,6 +1,8 @@
 import { Server as WebSocketServer } from 'ws';
 import { Server } from 'http';
-import { collectImageStream, processImageStream, sendVideoToClient } from './services';
+import { startImageStream, processImageStream, sendVideoToClient, createNamedPipe } from './services';
+
+export const PIPE_PATH = '/tmp/ffmpeg_pipe';
 
 export function initializeWebSocketServer(server: Server) {
     console.log("Initializing WebSocket server...");
@@ -14,13 +16,19 @@ export function initializeWebSocketServer(server: Server) {
         return;
     }
 
-    wss.on('connection', (ws) => {
+    wss.on('connection', async (ws) => {
         console.log('✅ WebSocket connection established.');
-
-        collectImageStream(ws);
+        // Create a named pipe
+        await createNamedPipe(PIPE_PATH);
+        // Start listening for incoming images
+        startImageStream(ws, PIPE_PATH);
+        // Start FFMPEG
+        const videoFilename = await processImageStream(ws, PIPE_PATH)
+        sendVideoToClient(ws, videoFilename)
         
         ws.on('close', () => {
             console.log('Closing WebSocket connection...');
+            ws.close()
             console.log('❌ WebSocket connection closed.');
         });
 
