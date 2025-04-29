@@ -6,18 +6,20 @@ import { Video } from 'expo-av';
 import { ServerFeedback } from '@/services/constants';
 import { ImageSelection } from './types';
 import { Buffer } from 'buffer';
+import { useSharedValue } from 'react-native-reanimated';
 
 const App = () => {
   const [images, setImages] = useState<ImageSelection[]>([]);
   const { ws, videoUri, serverFeedback } = useContext(WebSocketContext);
+  const imageOpacity = useSharedValue(1)
 
-  if (serverFeedback === ServerFeedback.PROCESSING) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.text}>Processing...</Text>
-      </View>
-    );
-  }
+  // if (serverFeedback === ServerFeedback.PROCESSING) {
+  //   return (
+  //     <View style={styles.container}>
+  //       <Text style={styles.text}>Processing...</Text>
+  //     </View>
+  //   );
+  // }
 
   const handleChoosePhotos = async () => {
     const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -72,7 +74,7 @@ const App = () => {
       <Text style={styles.text}>Montee</Text>
       <Button title="Choose images" onPress={handleChoosePhotos} />
       <Button title="Upload" onPress={handleUpload} />
-      {videoUri ? (
+      {/* {videoUri ? (
         <Video
           source={{ uri: videoUri }}
           rate={1.0}
@@ -82,7 +84,7 @@ const App = () => {
           isLooping
           style={{ width: '100%', height: '50%' }}
         />
-      ) : null}
+      ) : null} */}
     </View>
   );
 };

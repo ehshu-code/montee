@@ -8,19 +8,19 @@ export function startImageStream(ws: any, pipePath: string) {
     const stream = fs.createWriteStream(pipePath)
     ws.on("message", async (message: Buffer) => {
         console.log(`Message received:`, message)
-         if (isUtf8String(message)) {
+        if (isUtf8String(message)) {
             const textFlag = message.toString('utf8');
             if (textFlag === 'isLast') {
                 console.log('isLast')
                 stream.end()
                 fs.unlinkSync(pipePath)
             }
-         }
+        }
         else {
             console.log("Image received");
             const currentBuffer = Buffer.from(message);
             console.log("Buffer size:", currentBuffer.length);
-    
+
             // Write to named pipe
             stream.write(currentBuffer, (err) => {
                 if (err) {
@@ -29,7 +29,7 @@ export function startImageStream(ws: any, pipePath: string) {
                     console.log('Write successful')
                 }
             }
-        )
+            )
         }
     }
     );
@@ -77,7 +77,7 @@ export async function processImageStream(ws: any, pipePath: string): Promise<str
             '-progress', 'pipe:1',
             outputFilename
         ]);
-           
+
         ffmpeg.stderr.on('data', (error) => {
             console.error(`FFMPEG log: ${error}`);
         });
@@ -85,7 +85,7 @@ export async function processImageStream(ws: any, pipePath: string): Promise<str
         ffmpeg.stdout.on('data', (data) => {
             console.log(`FFMPEG progress: ${data}`);
         });
-        
+
 
         ffmpeg.on('close', (code) => {
             if (code === 0) {
@@ -115,9 +115,9 @@ export async function sendVideoToClient(ws: any, outputFilename: string) {
             console.log('Sending video data:', videoData);
             if (err) console.error('Error sending video:', err);
         });
-        
+
         await ws.close();
-        deleteFile(outputFilename);
+        // deleteFile(outputFilename);
     } catch (err) {
         console.error('Error:', err);
     }
