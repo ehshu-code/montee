@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, Button } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useContext, useEffect, useState } from 'react';
-import WebSocketContext from '@/services';
+import WebSocketContext from '@/services/SocketContext';
 import { Video } from 'expo-av';
 import { ServerFeedback } from '@/services/constants';
 import { ImageSelection } from './types';
@@ -45,7 +45,6 @@ const App = () => {
         }
       )));
     }
-    // Put navigation here
   };
 
   // TODO: Batch upload all images instead of iterating.

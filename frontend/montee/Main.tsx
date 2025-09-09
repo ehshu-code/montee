@@ -1,10 +1,13 @@
-import { WebSocketProvider } from "@/services"
+import { WebSocketProvider } from "@/services/SocketContext"
 import App from "./App"
+import { ImageSelectionContextProvider } from "./services/ImageSelectionContext";
 
 const Main = () => {
   return (
     <WebSocketProvider>
-      <App />
+      <ImageSelectionContextProvider>
+        <App />
+      </ImageSelectionContextProvider>
     </WebSocketProvider>
   );
 }

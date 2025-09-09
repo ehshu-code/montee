@@ -3,6 +3,7 @@ import { RootStackParamList } from "./types";
 import { Text, View, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
 import Carousel from 'react-native-reanimated-carousel';
 import { Video } from 'expo-av';
+import { LinearGradient } from 'expo-linear-gradient';
 
 type LandingScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'LandingScreen'>;
 
@@ -25,38 +26,45 @@ export default function LandingScreen(props: LandingScreenProps) {
     ];
 
     return (
-        <View style={styles.container}>
-            <View style={styles.headerBlock}>
-                <Text style={styles.text}>Montee</Text>
-                <Text style={styles.subtitleText}>Camera roll to hype reel in seconds...</Text>
+        <LinearGradient
+            colors={['#0D0D0D', '#000000']}
+            style={{ flex: 1 }}
+        >
+            <View style={styles.container}>
+                <View style={styles.headerBlock}>
+                    <Text style={styles.text}>Montee</Text>
+                    <Text style={styles.subtitleText}>Your camera roll photos to hype reel in seconds...</Text>
+                </View>
+                <View style={styles.videoContainer}>
+                    <Carousel
+                        loop
+                        autoPlay
+                        autoPlayInterval={1000}
+                        width={155}
+                        height={275}
+                        data={images}
+                        style={{ borderRadius: 12 }}
+                        scrollAnimationDuration={1500}
+                        renderItem={({ item }) => (
+                            <Image source={item} style={styles.image} />
+                        )}
+                    />
+                    <Video
+                        source={require('../assets/video/sample.mp4')}
+                        shouldPlay
+                        isLooping
+                        isMuted
+                        style={{ width: 155, height: 275, borderRadius: 10 }}
+                    />
+                </View>
+                <TouchableOpacity
+                    style={styles.button}
+                    onPress={() => props.navigation.navigate('UploadScreen')}
+                >
+                    <Text style={styles.buttonText}>Create</Text>
+                </TouchableOpacity>
             </View>
-            <View style={styles.videoContainer}>
-                <Carousel
-                    loop
-                    autoPlay
-                    autoPlayInterval={1000}
-                    width={155}
-                    height={275}
-                    data={images}
-                    scrollAnimationDuration={1500}
-                    renderItem={({ item }) => (
-                        <Image source={item} style={styles.image} />
-                    )}
-                />
-                <Video
-                    source={require('../assets/video/sample.mp4')}
-                    shouldPlay
-                    isLooping
-                    style={{ width: 175, height: 275 }}
-                />
-            </View>
-            <TouchableOpacity
-                style={styles.button}
-                onPress={() => props.navigation.navigate('UploadScreen')}
-            >
-                <Text style={styles.buttonText}>Create</Text>
-            </TouchableOpacity>
-        </View>
+        </LinearGradient>
 
     )
 }
@@ -65,15 +73,15 @@ export default function LandingScreen(props: LandingScreenProps) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: 'black',
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingVertical: 40,
     },
     videoContainer: {
         flexDirection: 'row',
-        marginLeft: 20,
-        borderRadius: 10
+        borderRadius: 10,
+        bottom: 20,
+        gap: 10
     },
     image: {
         width: '100%',
@@ -88,19 +96,20 @@ const styles = StyleSheet.create({
         textShadowColor: 'red',
         textShadowOffset: { width: 0, height: 0 },
         textShadowRadius: 0, // change this for more gl0w
-        padding: 5,
-        position: 'static'
+        padding: 5
     },
     headerBlock: {
         alignItems: 'center',
-        marginTop: 120,
+        marginTop: 175,
+        position: 'relative',
     },
     subtitleText: {
         fontFamily: 'Arial',
-        color: 'white',
+        color: 'red',
         fontStyle: 'italic',
         fontWeight: 'bold',
-        fontSize: 12
+        fontSize: 14,
+        bottom: 25
     },
     button: {
         alignItems: 'center',
@@ -113,10 +122,9 @@ const styles = StyleSheet.create({
         marginBottom: 20
     },
     buttonText: {
-        fontFamily: 'Helvetica Neue',
-        fontSize: 15,
+        fontFamily: 'Dalmation',
+        fontSize: 20,
         fontWeight: 'bold',
-        fontStyle: 'italic',
-        color: 'white'
+        color: 'black'
     }
 });
