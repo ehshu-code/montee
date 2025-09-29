@@ -11,10 +11,6 @@ export interface ImageSelection {
     base64: string;
 }
 
-export enum ServerFeedback {
-    FINISHED = 'FINISHED'
-}
-
 export interface Flag {
     type: FlagType
 }
@@ -25,8 +21,12 @@ export interface StartJobFlag extends Flag {
 }
 
 export enum FlagType {
+    // From client ---> server
     START_JOB = 'START_JOB',
     END_JOB = 'END_JOB',
     START_SESSION = 'START_SESSION',
-    END_SESSION = 'END_SESSION'
+    END_SESSION = 'END_SESSION',
+    // From server ---> client
+    PROGRESS_IND = 'PROGRESS_IND',
+    FINISHED_JOB = 'FINISHED_JOB'
 }
